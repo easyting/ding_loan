@@ -85,15 +85,15 @@ function ding_loan_loans_form($form, &$form_state, $account, $items = array()) {
         'class' => 'title',
       ),
       'loan_date' => array(
-          'data' => format_date(strtotime(check_plain($item->loan_date)), 'custom', 'd/m/Y'),
-          'class' => 'created-date',
-        ),
+        'data' => format_date(strtotime(check_plain($item->loan_date)), 'custom', 'd/m/Y'),
+        'class' => 'created-date',
+      ),
       'expiry' => array(
-          'data' => format_date(strtotime(check_plain($item->expiry)), 'custom', 'd/m/Y'),
-          'class' => 'expire-date',
-        ),
+        'data' => format_date(strtotime(check_plain($item->expiry)), 'custom', 'd/m/Y'),
+        'class' => 'expire-date',
+      ),
       'operations' => array(
-        'data' =>  array(
+        'data' => array(
         ),
         'class' => 'operations',
       ),
@@ -109,15 +109,14 @@ function ding_loan_loans_form($form, &$form_state, $account, $items = array()) {
     }
     if ($item->renewable) {
       $options[$item->id]['operations']['data'][] = array(
-          '#type' => 'submit',
-          '#prefix' => '<div class="renew-loan-button">',
-          '#value' => t('Renew'),
-          '#submit' => array('ding_loan_loans_form_renew_submit'),
-          '#loan_id' => $item->id,
-          '#name' => 'renew-' . $item->id, // Needed so form API can tell them
-                                           // apart.
-          '#disabled' => !$item->renewable,
-          '#suffix' => '</div>',
+        '#type' => 'submit',
+        '#prefix' => '<div class="renew-loan-button">',
+        '#value' => t('Renew'),
+        '#submit' => array('ding_loan_loans_form_renew_submit'),
+        '#loan_id' => $item->id,
+        '#name' => 'renew-' . $item->id, // Needed so form API can tell them apart.
+        '#disabled' => !$item->renewable,
+        '#suffix' => '</div>',
       );
     }
   }
@@ -182,9 +181,11 @@ function ding_loan_loans_form_submit($form, &$form_state) {
       case DingProviderLoan::STATUS_NOT_RENEWED:
         if ($status['message'] == 'maxNofRenewals') {
           $rmessage = t('Maximum number of renewals reached');
-        } elseif ($status['message'] == 'copyIsReserved') {
+        }
+        elseif ($status['message'] == 'copyIsReserved') {
           $message = t('The material is reserved by another loaner');
-        } else {
+        }
+        else {
           $message = t('Unable to renew material');
         }
         drupal_set_message(t('"@title not renewed: @message"', array('@title' => $title, '@message' => $message)), 'warning');
