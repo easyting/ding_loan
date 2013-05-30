@@ -22,7 +22,7 @@ function ding_loan_loans_content_type_render($subtype, $conf, $panel_args, $cont
   $block->module = 'ding_loan';
   $block->delta = 'loans';
   $block->title = t('Loan list');
-  $list_type = !empty($conf['loans_list_type']) ? $conf['loans_list_type'] : 'loan';
+  $list_type = !empty($conf['loans_list_type']) && ding_provider_implements('ill', 'list') ? $conf['loans_list_type'] : 'loan';
 
   // Get loans from the provider.
   $account = isset($context->data) ? $context->data : NULL;
