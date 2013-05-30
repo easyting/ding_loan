@@ -22,9 +22,16 @@ function ding_loan_loans_content_type_render($subtype, $conf, $panel_args, $cont
   $block->module = 'ding_loan';
   $block->delta = 'loans';
   $block->title = t('Loan list');
-  $list_type = !empty($conf['loans_list_type']) && ding_provider_implements('ill', 'list') ? $conf['loans_list_type'] : 'loan';
+  $ill_enabled = ding_provider_implements('ill', 'list');
+  $list_type = !empty($conf['loans_list_type']) ? $conf['loans_list_type'] : 'loan';
 
-  // Get loans from the provider.
+  // In case pane tries to show ILL list, but provider does not implement that,
+  // skip this pane.
+  if(!$ill_enabled && $list_type == 'ill') {
+    return new stdClass();
+  }
+
+// Get loans from the provider.
   $account = isset($context->data) ? $context->data : NULL;
   $loans = ding_provider_invoke_page($list_type, 'list', $account);
 
