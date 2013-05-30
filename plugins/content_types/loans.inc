@@ -22,10 +22,11 @@ function ding_loan_loans_content_type_render($subtype, $conf, $panel_args, $cont
   $block->module = 'ding_loan';
   $block->delta = 'loans';
   $block->title = t('Loan list');
+  $list_type = !empty($conf['loans_list_type']) ? $conf['loans_list_type'] : 'loan';
 
   // Get loans from the provider.
   $account = isset($context->data) ? $context->data : NULL;
-  $loans = ding_provider_invoke_page('loan', 'list', $account);
+  $loans = ding_provider_invoke_page($list_type, 'list', $account);
 
   // Preload all entities to speed up the page.
   $ids = array();
@@ -43,8 +44,32 @@ function ding_loan_loans_content_type_render($subtype, $conf, $panel_args, $cont
 /**
  * Adding the admin form, to be able to control the required context
  */
-function ding_loan_loans_content_type_edit_form($form, &$form_state) {
+function ding_loan_loans_content_type_edit_form($form, $form_state) {
+  $conf = $form_state['conf'];
+
+  $form['loans_list_type'] = array(
+    '#title' => t('List type'),
+    '#type' => 'radios',
+    '#options' => array(
+      'loan' => t('Loans'),
+      'ill' => t('Interlibrary loans'),
+    ),
+    '#default_value' => !empty($conf['loans_list_type']) ? $conf['loans_list_type'] : 'loan',
+  );
+
   return $form;
+}
+
+/**
+ * Custom submit handler for the pane settings form.
+ *
+ * @param array $form
+ *   Form structure.
+ * @param array $form_state
+ *   Form state values.
+ */
+function ding_loan_loans_content_type_edit_form_submit($form, $form_state) {
+  $form_state['conf']['loans_list_type'] = $form_state['values']['loans_list_type'];
 }
 
 /**
@@ -136,16 +161,6 @@ function ding_loan_loans_form($form, &$form_state, $account, $loans = array()) {
       );
     }
   }
-
-  $form['actions_top'] = array (
-    '#weight' => 0,
-  );
-  $form['actions_top']['submit_first'] = array(
-    '#type' => 'submit',
-    '#prefix' => '<div class="renew-loan-button">',
-    '#value' => t('Renew selected'),
-    '#suffix' => '</div>',
-  );
 
   $form['loans'] = array(
     '#type' => 'tableselect_form',
