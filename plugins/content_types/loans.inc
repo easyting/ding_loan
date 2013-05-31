@@ -139,6 +139,16 @@ function ding_loan_loans_form($form, &$form_state, $account, $loans = array()) {
       ),
     );
 
+    // Add periodical number, if any.
+    if (!empty($item->notes)) {
+      $options[$item->id]['title']['data'][] = array(
+        '#type' => 'markup',
+        '#prefix' => '<p class="order-id periodical-number">',
+        '#markup' => t('(Periodical no. @periodical)', array('@periodical' => check_plain($item->notes))),
+        '#suffix' => '</p>',
+      );
+    }
+
     // Add material number.
     if (isset($item->materials_number)) {
       $options[$item->id]['title']['data'][] = array(
