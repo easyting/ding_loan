@@ -190,6 +190,11 @@ function ding_loan_loans_form($form, &$form_state, $account, $loans = array()) {
   }
 
   $form['loans'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Loans'),
+  );
+
+  $form['loans']['table'] = array(
     '#type' => 'tableselect_form',
     '#header' => $header,
     '#options' => $options,
