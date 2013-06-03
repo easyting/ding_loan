@@ -40,3 +40,39 @@ function ding_loan_sort_expiry($a, $b) {
   return ($a->expiry < $b->expiry) ? -1 : 1;
 }
 
+/**
+ * Draw table with loan items.
+ *
+ * Same as 'ding_provider_get_form' but without form.
+ *
+ * @param array $form_builder
+ *   Form ID.
+ * @param array $loans
+ *   Array with load info.
+ *
+ * @return array
+ *   Render array.
+ */
+function ding_loan_get_table($form_builder, $loans) {
+  // Fake form creation.
+  $form = array();
+  $form_state = array();
+  $table = $form_builder($form, $form_state, NULL, $loans);
+
+  // Remove empty cell before 'title'.
+  $rows = $table['loans']['#options'];
+  foreach ($rows as $key => $row) {
+    unset($row['#disabled']);
+    $rows[$key] = $row;
+  }
+
+  $output = array(
+    '#theme' => 'table',
+    '#header' => $table['loans']['#header'],
+    '#empty' => $table['loans']['#empty'],
+    '#rows' => $rows,
+  );
+
+  // Return only markup.
+  return $output;
+}
