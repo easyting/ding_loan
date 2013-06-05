@@ -60,7 +60,7 @@ function ding_loan_get_table($form_builder, $loans) {
   $table = $form_builder($form, $form_state, NULL, $loans);
 
   // Remove empty cell before 'title'.
-  $rows = $table['loans']['#options'];
+  $rows = $table['loans']['table']['#options'];
   foreach ($rows as $key => $row) {
     unset($row['#disabled']);
     $rows[$key] = $row;
@@ -68,8 +68,8 @@ function ding_loan_get_table($form_builder, $loans) {
 
   $output = array(
     '#theme' => 'table',
-    '#header' => $table['loans']['#header'],
-    '#empty' => $table['loans']['#empty'],
+    '#header' => $table['loans']['table']['#header'],
+    '#empty' => $table['loans']['table']['#empty'],
     '#rows' => $rows,
   );
 
