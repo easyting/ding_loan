@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * User's loan lists.
+ */
 
 /**
  * Plugins are described by creating a $plugin array which will be used
@@ -14,7 +18,7 @@ $plugin = array(
 );
 
 /**
- * Render the block
+ * Render the block.
  */
 function ding_loan_loans_content_type_render($subtype, $conf, $panel_args, $context) {
   // Define basic block object.
@@ -22,10 +26,18 @@ function ding_loan_loans_content_type_render($subtype, $conf, $panel_args, $cont
   $block->module = 'ding_loan';
   $block->delta = 'loans';
   $block->title = t('Loan list');
+  $ill_enabled = ding_provider_implements('ill', 'list');
+  $list_type = !empty($conf['loans_list_type']) ? $conf['loans_list_type'] : 'loan';
+
+  // In case pane tries to show ILL list, but provider does not implement that,
+  // skip this pane.
+  if (!$ill_enabled && $list_type == 'ill') {
+    return new stdClass();
+  }
 
   // Get loans from the provider.
   $account = isset($context->data) ? $context->data : NULL;
-  $loans = ding_provider_invoke_page('loan', 'list', $account);
+  $loans = ding_provider_invoke_page($list_type, 'list', $account);
 
   // Preload all entities to speed up the page.
   $ids = array();
@@ -35,20 +47,49 @@ function ding_loan_loans_content_type_render($subtype, $conf, $panel_args, $cont
   ding_entity_load_multiple($ids);
 
   // Set block content, with loans form.
-  $block->content = ding_provider_get_form('ding_loan_loans_form', $account, $loans);
+  if ($list_type == 'ill') {
+    $block->content = ding_loan_get_table('ding_loan_loans_form', $loans);
+  }
+  else {
+    $block->content = ding_provider_get_form('ding_loan_loans_form', $account, $loans);
+  }
 
   return $block;
 }
 
 /**
- * Adding the admin form, to be able to control the required context
+ * Adding the admin form, to be able to control the required context.
  */
-function ding_loan_loans_content_type_edit_form($form, &$form_state) {
+function ding_loan_loans_content_type_edit_form($form, $form_state) {
+  $conf = $form_state['conf'];
+
+  $form['loans_list_type'] = array(
+    '#title' => t('List type'),
+    '#type' => 'radios',
+    '#options' => array(
+      'loan' => t('Loans'),
+      'ill' => t('Interlibrary loans'),
+    ),
+    '#default_value' => !empty($conf['loans_list_type']) ? $conf['loans_list_type'] : 'loan',
+  );
+
   return $form;
 }
 
 /**
- * Implements a drupal form, which show a list of reservations
+ * Custom submit handler for the pane settings form.
+ *
+ * @param array $form
+ *   Form structure.
+ * @param array $form_state
+ *   Form state values.
+ */
+function ding_loan_loans_content_type_edit_form_submit($form, $form_state) {
+  $form_state['conf']['loans_list_type'] = $form_state['values']['loans_list_type'];
+}
+
+/**
+ * Implements a drupal form, which show a list of reservations.
  */
 function ding_loan_loans_form($form, &$form_state, $account, $loans = array()) {
   $options = array();
@@ -101,11 +142,20 @@ function ding_loan_loans_form($form, &$form_state, $account, $loans = array()) {
         'class' => 'expire-date',
       ),
       'operations' => array(
-        'data' => array(
-        ),
+        'data' => array(),
         'class' => 'operations',
       ),
     );
+
+    // Add periodical number, if any.
+    if (!empty($item->notes)) {
+      $options[$item->id]['title']['data'][] = array(
+        '#type' => 'markup',
+        '#prefix' => '<p class="order-id periodical-number">',
+        '#markup' => t('(Periodical no. @periodical)', array('@periodical' => check_plain($item->notes))),
+        '#suffix' => '</p>',
+      );
+    }
 
     // Add material number.
     if (isset($item->materials_number)) {
@@ -119,13 +169,15 @@ function ding_loan_loans_form($form, &$form_state, $account, $loans = array()) {
 
     // Add renew load opreation.
     if (isset($item->renewable) && $item->renewable) {
+      // Button name, needed for form API.
+      $name = 'renew-' . $item->id;
       $options[$item->id]['operations']['data'][] = array(
         '#type' => 'submit',
         '#prefix' => '<div class="renew-loan-button">',
         '#value' => t('Renew'),
         '#submit' => array('ding_loan_loans_form_renew_submit'),
         '#loan_id' => $item->id,
-        '#name' => 'renew-' . $item->id, // Needed so form API can tell them apart.
+        '#name' => $name,
         '#disabled' => !$item->renewable,
         '#suffix' => '</div>',
         '#attributes' => array(
@@ -137,17 +189,12 @@ function ding_loan_loans_form($form, &$form_state, $account, $loans = array()) {
     }
   }
 
-  $form['actions_top'] = array (
-    '#weight' => 0,
-  );
-  $form['actions_top']['submit_first'] = array(
-    '#type' => 'submit',
-    '#prefix' => '<div class="renew-loan-button">',
-    '#value' => t('Renew selected'),
-    '#suffix' => '</div>',
+  $form['loans'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Loans'),
   );
 
-  $form['loans'] = array(
+  $form['loans']['table'] = array(
     '#type' => 'tableselect_form',
     '#header' => $header,
     '#options' => $options,
@@ -156,7 +203,7 @@ function ding_loan_loans_form($form, &$form_state, $account, $loans = array()) {
     '#weight' => 1,
   );
 
-  $form['actions_bottom'] = array (
+  $form['actions_bottom'] = array(
     '#weight' => 2,
   );
   $form['actions_bottom']['submit_second'] = array(
@@ -208,6 +255,7 @@ function ding_loan_loans_form_submit($form, &$form_state) {
       case DingProviderLoan::STATUS_RENEWED:
         drupal_set_message(t('"@title renewed"', array('@title' => $title)));
         break;
+
       case DingProviderLoan::STATUS_NOT_RENEWED:
         if ($status['message'] == 'maxNofRenewals') {
           $message = t('Maximum number of renewals reached');
@@ -220,6 +268,7 @@ function ding_loan_loans_form_submit($form, &$form_state) {
         }
         drupal_set_message(t('"@title not renewed: @message"', array('@title' => $title, '@message' => $message)), 'warning');
         break;
+
       default:
         watchdog('ding_loan', 'Unknown renewal status code @code.', array('@code' => $status), WATCHDOG_ERROR);
     }
@@ -227,10 +276,9 @@ function ding_loan_loans_form_submit($form, &$form_state) {
 }
 
 /**
- *
+ * Renew form handler.
  */
 function ding_loan_loans_form_renew_submit($form, &$form_state) {
   form_set_value($form['loans'], array($form_state['triggering_element']['#loan_id']), $form_state);
   ding_loan_loans_form_submit($form, $form_state);
 }
-
