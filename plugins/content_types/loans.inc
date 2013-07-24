@@ -235,9 +235,16 @@ function _ding_loan_loans_disable($element) {
  */
 function ding_loan_loans_form_submit($form, &$form_state) {
   $ids = array();
-  foreach (array_filter($form_state['values']['loans']) as $id) {
-    // The loans array has _form_options array, henc the is_string check.
-    if (is_string($id) && $form_state['values']['items'][$id]->renewable) {
+  if (isset($form_state['values']['loans'])) {
+    foreach (array_filter($form_state['values']['loans']) as $id) {
+      // The loans array has _form_options array, henc the is_string check.
+      if (is_string($id) && $form_state['values']['items'][$id]->renewable) {
+        $ids[] = $id;
+      }
+    }
+  }
+  else {
+    foreach ($form_state['complete form']['loans']['table']['#value'] as $id) {
       $ids[] = $id;
     }
   }
