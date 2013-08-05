@@ -121,8 +121,7 @@ function ding_loan_loans_form($form, &$form_state, $account, $loans = array()) {
     $entity = $item->entity;
 
     if (!is_object($entity)) {
-      // @todo Add dependency or refactor it.
-      $entity = ding_reservation_replace_entity($item);
+      $entity = ding_provider_get_pseudo_entity($item->ding_entity_id);
     }
 
     $options[$item->id] = array(
@@ -235,9 +234,16 @@ function _ding_loan_loans_disable($element) {
  */
 function ding_loan_loans_form_submit($form, &$form_state) {
   $ids = array();
-  foreach (array_filter($form_state['values']['loans']) as $id) {
-    // The loans array has _form_options array, henc the is_string check.
-    if (is_string($id) && $form_state['values']['items'][$id]->renewable) {
+  if (isset($form_state['values']['loans'])) {
+    foreach (array_filter($form_state['values']['loans']) as $id) {
+      // The loans array has _form_options array, henc the is_string check.
+      if (is_string($id) && $form_state['values']['items'][$id]->renewable) {
+        $ids[] = $id;
+      }
+    }
+  }
+  else {
+    foreach ($form_state['complete form']['loans']['table']['#value'] as $id) {
       $ids[] = $id;
     }
   }
@@ -251,7 +257,7 @@ function ding_loan_loans_form_submit($form, &$form_state) {
       $title = $item->display_name;
     }
     // @todo Better feedback.
-    switch ($status['state']) {
+    switch ($status) {
       case DingProviderLoan::STATUS_RENEWED:
         drupal_set_message(t('"@title renewed"', array('@title' => $title)));
         break;
