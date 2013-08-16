@@ -120,10 +120,6 @@ function ding_loan_loans_form($form, &$form_state, $account, $loans = array()) {
     $item->creator = 'fake';
     $entity = $item->entity;
 
-    if (!is_object($entity)) {
-      $entity = ding_provider_get_pseudo_entity($item->ding_entity_id);
-    }
-
     $options[$item->id] = array(
       '#disabled' => $item->renewable,
       'title' => array(
