@@ -118,7 +118,11 @@ function ding_loan_loans_form($form, &$form_state, $account, $loans = array()) {
 
   foreach ($loans as $id => $item) {
     $item->creator = 'fake';
+
     $entity = $item->entity;
+    if (!is_object($entity)) {
+      $entity = ding_loan_replace_entity($item);
+    }
 
     $options[$item->id] = array(
       '#disabled' => $item->renewable,
