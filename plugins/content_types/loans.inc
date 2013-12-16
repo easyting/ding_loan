@@ -37,7 +37,12 @@ function ding_loan_loans_content_type_render($subtype, $conf, $panel_args, $cont
 
   // Get loans from the provider.
   $account = isset($context->data) ? $context->data : NULL;
-  $loans = ding_provider_invoke_page($list_type, 'list', $account);
+  $cid = 'loans-' . $list_type;
+  $loans = ding_session_cache_get('ding_loan', $cid);
+  if ($loans === FALSE) {
+    $loans = ding_provider_invoke_page($list_type, 'list', $account);
+    ding_session_cache_set('ding_loan', $cid, $loans);
+  }
 
   // Preload all entities to speed up the page.
   $ids = array();
@@ -118,11 +123,7 @@ function ding_loan_loans_form($form, &$form_state, $account, $loans = array()) {
 
   foreach ($loans as $id => $item) {
     $item->creator = 'fake';
-
     $entity = $item->entity;
-    if (!is_object($entity)) {
-      $entity = ding_loan_replace_entity($item);
-    }
 
     $options[$item->id] = array(
       '#disabled' => $item->renewable,
