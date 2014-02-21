@@ -56,7 +56,7 @@ function ding_loan_sort_expiry($a, $b) {
  *
  * Same as 'ding_provider_get_form' but without form.
  *
- * @param array $form_builder
+ * @param callable $form_builder
  *   Form ID.
  * @param array $loans
  *   Array with load info.
@@ -100,4 +100,14 @@ function ding_loan_get_table($form_builder, $loans) {
 function ding_loan_replace_entity($item) {
   $provider = _ding_provider_get_provider();
   return call_user_func($provider['reservation']['module'] . '_replace_entity', $item);
+}
+
+/**
+ * Implements hook_ding_loan_renewed();
+ */
+function ding_loan_ding_loan_renewed() {
+  // See ding_loan_loans_content_type_edit_form() for list types.
+  // $cid has the following format: 'loans-<list type>'.
+  ding_session_cache_clear('ding_loan', 'loans-loan');
+  ding_session_cache_clear('ding_loan', 'loans-ill');
 }
