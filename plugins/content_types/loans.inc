@@ -261,6 +261,7 @@ function ding_loan_loans_form_submit($form, &$form_state) {
     switch ($status) {
       case DingProviderLoan::STATUS_RENEWED:
         drupal_set_message(t('"@title renewed"', array('@title' => $title)));
+        module_invoke_all('ding_loan_renewed', $id);
         break;
 
       case DingProviderLoan::STATUS_NOT_RENEWED:
